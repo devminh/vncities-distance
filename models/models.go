@@ -22,8 +22,10 @@ type City struct {
 }
 
 type DistanceCities struct {
+	Code        int32   `json:"code"`
 	Description string  `json:"description"`
 	Distance    float64 `json:"distance"`
+	Unit        string  `json:"unit_measure"`
 }
 
 type CityInput struct {
