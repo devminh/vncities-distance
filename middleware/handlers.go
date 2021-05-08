@@ -117,7 +117,7 @@ func GetDistance(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(responseData)
 }
 
-// get one city from the DB by its cityname
+// get city from the DB by its cityname
 func getCity(cityName string) []models.City {
 	// create the postgres db connection
 	db := createConnection()
@@ -129,7 +129,10 @@ func getCity(cityName string) []models.City {
 	var cities []models.City
 
 	// create the select sql query
-	sqlStatement := `SELECT * FROM vn_cities WHERE city ILIKE $1`
+	sqlStatement := `SELECT * FROM vn_cities 
+	WHERE city ILIKE $1 
+	OR city ILIKE unaccent($1) 
+	OR unaccent(city) ILIKE $1` //unaccent: drop vietnamese characters
 
 	// execute the sql statement
 	rows, err := db.Query(sqlStatement, "%"+cityName+"%")
