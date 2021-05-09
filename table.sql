@@ -11,3 +11,12 @@ CREATE TABLE vn_cities (
     population_proper BIGINT NOT NULL,
     
 );
+
+CREATE TABLE search_distance_history
+(
+    id SERIAL PRIMARY KEY NOT NULL,
+    description VARCHAR NOT NULL,
+    distance VARCHAR(255) NOT NULL,
+    unit VARCHAR(255) NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+)

@@ -28,6 +28,14 @@ type DistanceCities struct {
 	Unit        string  `json:"unit_measure"`
 }
 
+type StoredDistance struct {
+	ID          int64   `json:"id"`
+	Description string  `json:"description"`
+	Distance    float64 `json:"distance"`
+	Unit        string  `json:"unit_measurement"`
+	DateCreated string  `json:"date_created"`
+}
+
 type CityInput struct {
 	CityName1 string `json:"city_name_1"`
 	CityName2 string `json:"city_name_2"`

@@ -5,7 +5,6 @@ import (
 	"encoding/json" // package to encode and decode the json into struct and vice versa
 	"fmt"
 	"log"
-	"math"
 	"net/http"                 // used to access the request and response object of the api
 	"os"                       // used to read the environment variable
 	"vncities-distance/models" // models package where User schema is defined
@@ -16,11 +15,7 @@ import (
 	_ "github.com/lib/pq"      // postgres golang driver
 )
 
-// response format
-type response struct {
-	ID      int64  `json:"id,omitempty"`
-	Message string `json:"message,omitempty"`
-}
+// error response format
 type ErrorResponse struct {
 	Code    int64  `json:"code"`
 	Message string `json:"message"`
@@ -104,75 +99,44 @@ func GetDistance(w http.ResponseWriter, r *http.Request) {
 		distance = Haversine(cityInfo1[0].Lng, cityInfo1[0].Lat, cityInfo2[0].Lng, cityInfo2[0].Lat)
 		responseData = models.DistanceCities{
 			Code:        200,
-			Description: "Distance from " + cityInfo1[0].City + "," + *cityInfo1[0].AdminName + " to " + cityInfo2[0].City + "," + *cityInfo2[0].AdminName,
+			Description: "Distance as the crow flies from " + cityInfo1[0].City + "," + *cityInfo1[0].AdminName + " to " + cityInfo2[0].City + "," + *cityInfo2[0].AdminName,
 			Distance:    distance,
 			Unit:        "kilometer",
 		}
+		insertedRecord := models.StoredDistance{
+			Description: "Distance as the crow flies from " + cityInfo1[0].City + "," + *cityInfo1[0].AdminName + " to " + cityInfo2[0].City + "," + *cityInfo2[0].AdminName,
+			Distance:    distance,
+			Unit:        "kilometer",
+		}
+		insertId := insertDistanceHistory(insertedRecord)
+		fmt.Println("The search distance has been saved with id:", insertId)
 	} else {
 		responseData = ErrorResponse{
 			Code:    500,
-			Message: "Can not find the distance because there is an invalid city",
+			Message: "Can not find the distance because there is an invalid city name",
 		}
 	}
 	json.NewEncoder(w).Encode(responseData)
 }
 
-// get city from the DB by its cityname
-func getCity(cityName string) []models.City {
-	// create the postgres db connection
-	db := createConnection()
+func GetSearchDistanceHistory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// params := mux.Vars(r)
 
-	// close the db connection
-	defer db.Close()
+	// cityname := params["cityname"]
+	history := getDistanceHistory()
 
-	// create a user of models.User type
-	var cities []models.City
-
-	// create the select sql query
-	sqlStatement := `SELECT * FROM vn_cities 
-	WHERE city ILIKE $1 
-	OR city ILIKE unaccent($1) 
-	OR unaccent(city) ILIKE $1` //unaccent: drop vietnamese characters
-
-	// execute the sql statement
-	rows, err := db.Query(sqlStatement, "%"+cityName+"%")
-
-	if err != nil {
-		log.Fatalf("Unable to scan the row. %v", err)
+	var responseData interface{}
+	if len(history) > 0 {
+		responseData = history
 	} else {
-		// close the statement
-		defer rows.Close()
-
-		// iterate over the rows
-		for rows.Next() {
-			var city models.City
-
-			// unmarshal the row object to user
-			err = rows.Scan(&city.ID, &city.City, &city.Lat, &city.Lng, &city.Country, &city.Iso2, &city.AdminName, &city.Capital, &city.Population, &city.PopulationProper)
-
-			if err != nil {
-				log.Fatalf("Unable to scan the row. %v", err)
-			}
-
-			// append the user in the users slice
-			cities = append(cities, city)
-
+		responseData = ErrorResponse{
+			Code:    500,
+			Message: "Can not find the city",
 		}
 	}
-	return cities
-}
 
-func Haversine(lonFrom float64, latFrom float64, lonTo float64, latTo float64) (distance float64) {
-	const earthRadius = float64(6371)
-	var deltaLat = (latTo - latFrom) * (math.Pi / 180)
-	var deltaLon = (lonTo - lonFrom) * (math.Pi / 180)
-
-	var a = math.Sin(deltaLat/2)*math.Sin(deltaLat/2) +
-		math.Cos(latFrom*(math.Pi/180))*math.Cos(latTo*(math.Pi/180))*
-			math.Sin(deltaLon/2)*math.Sin(deltaLon/2)
-	var c = 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-
-	distance = earthRadius * c //in meters
-
-	return distance
+	// send the response
+	json.NewEncoder(w).Encode(responseData)
 }
