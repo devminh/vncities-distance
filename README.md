@@ -5,6 +5,8 @@ This project uses a remote PostgreSQL DB on https://www.elephantsql.com/
 
 VN cities csv: https://simplemaps.com/data/vn-cities
 
+go run main.go to run
+
 Test API:
 
 curl --location --request GET 'http://localhost:10000/api/city?cityname=ho%20chi%20minh'
